@@ -1,0 +1,150 @@
+
+
+# 🧠 Your AUTH MASTER TEMPLATE (TRACK + PROGRESS)
+
+Use this as your **single source of truth**.
+
+---
+
+## 🟢 PHASE 1 — REGISTER (CURRENT)
+
+### 🔲 `/register-init`
+
+* [✅] Input validation (Zod)
+* [ ] Check user exists (DB)
+* [ ] Generate OTP
+* [ ] Hash password
+* [ ] Hash OTP
+* [ ] Store in Redis (TTL)
+* [ ] Send OTP
+* [ ] Response
+
+---
+
+### 🔲 `/verify-otp`
+
+* [ ] Accept email + OTP
+* [ ] Fetch Redis data
+* [ ] Validate existence (expired / missing)
+* [ ] Compare hashed OTP
+* [ ] Handle wrong attempts
+* [ ] Create user in DB
+* [ ] Enforce UNIQUE email
+* [ ] Delete Redis key
+* [ ] Response
+
+---
+
+## 🟡 PHASE 2 — LOGIN
+
+### 🔲 `/login`
+
+* [ ] Validate input
+* [ ] Find user in DB
+* [ ] Compare password (bcrypt)
+* [ ] Generate access token
+* [ ] Generate refresh token
+* [ ] Send refresh token (HTTP-only cookie)
+* [ ] Return access token
+
+---
+
+## 🟠 PHASE 3 — AUTH MIDDLEWARE
+
+### 🔲 `authMiddleware`
+
+* [ ] Extract token from header
+* [ ] Verify JWT
+* [ ] Attach user to request
+* [ ] Handle invalid token
+
+---
+
+## 🔵 PHASE 4 — REFRESH FLOW
+
+### 🔲 `/refresh-token`
+
+* [ ] Read refresh token from cookie
+* [ ] Verify refresh token
+* [ ] Generate new access token
+* [ ] Return access token
+
+---
+
+## 🔴 PHASE 5 — SAFETY (ONLY IF TIME)
+
+* [ ] Rate limiting (OTP + login)
+* [ ] Logout (invalidate refresh token)
+* [ ] Token expiry handling
+
+---
+
+# ✅ WHAT YOU HAVE ALREADY DESIGNED
+
+✔ OTP flow
+✔ Redis structure
+✔ Verify flow
+✔ Basic security thinking
+
+👉 That means:
+
+> You are already **~40% done with auth design**
+
+---
+
+# 🧠 NOW — DETAILED FLOW (WHAT YOU COVERED)
+
+I’ll tighten it so you can **code directly**.
+
+---
+
+## 🔹 `/register-init` FLOW
+
+1. Receive: name, email, password
+2. Validate (Zod)
+3. Check DB:
+
+   * if email exists → reject
+4. Generate OTP (6 digit)
+5. Hash:
+
+   * password (bcrypt)
+   * OTP
+6. Store in Redis:
+
+   ```
+   otp:<email> = {
+     name,
+     email,
+     hashedPassword,
+     hashedOtp,
+     attempts
+   } (TTL: 5 min)
+   ```
+7. Send OTP (email)
+8. Return success
+
+---
+
+## 🔹 `/verify-otp` FLOW
+
+1. Receive: email, otp
+2. Fetch Redis (`otp:<email>`)
+3. If not found → “Invalid or expired OTP”
+4. Compare:
+
+   ```
+   hash(inputOtp) === storedHash
+   ```
+5. If wrong:
+
+   * increment attempts
+   * return error
+6. If correct:
+
+   * create user in DB
+   * DB enforces UNIQUE email
+   * delete Redis key
+7. Return success
+
+---
